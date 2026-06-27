@@ -15,6 +15,8 @@ try:
         config = json.load(f)
         TARGET_URL = config["url"].strip()
         TARGET_EMAIL = config.get("target_email", "shayan2@chbeta.ir").strip()
+        CC_EMAIL = config.get("cc_email", "").strip()
+        BCC_EMAIL = config.get("bcc_email", "").strip()
 
         if not TARGET_URL.endswith('/'):
             TARGET_URL += '/'
@@ -73,120 +75,164 @@ except Exception as e:
 # ==============================================================
 # بخش ۳: بدنه اصلی تست
 # ==============================================================
-print(f"\n▶️ شروع تست: ارسال نامه جدید به {TARGET_EMAIL}")
+try:
+    print(f"\n▶️ شروع تست: ارسال نامه جدید به {TARGET_EMAIL}")
 
-run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
-time.sleep(5)
+    run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
+    time.sleep(5)
 
-run_step(lambda: wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'نامه جدید')]"))).click(),
-         "کلیک روی نامه جدید")
-time.sleep(1.5)
+    run_step(
+        lambda: wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'نامه جدید')]"))).click(),
+        "کلیک روی نامه جدید")
+    time.sleep(1.5)
 
 
-def check_and_select_from():
-    elements = driver.find_elements(By.XPATH,
-                                    "//mat-select[@role='combobox'] | //div[contains(@id,'mat-select-value')]")
-    visible_dropdown = next((el for el in elements if el.is_displayed()), None)
+    def check_and_select_from():
+        elements = driver.find_elements(By.XPATH,
+                                        "//mat-select[@role='combobox'] | //div[contains(@id,'mat-select-value')]")
+        visible_dropdown = next((el for el in elements if el.is_displayed()), None)
 
-    if not visible_dropdown:
-        print("  [ℹ️] فیلد فرستنده (From) وجود نداشت. ادامه عملیات...")
-        return "SKIP_LOG"
+        if not visible_dropdown:
+            print("  [ℹ️] فیلد فرستنده (From) وجود نداشت. ادامه عملیات...")
+            return "SKIP_LOG"
 
-    try:
-        visible_dropdown.click()
+        try:
+            visible_dropdown.click()
+            time.sleep(0.5)
+            option = wait.until(
+                EC.presence_of_element_located((By.XPATH, "(//mat-option)[1] | //mat-option[contains(., 'TestZade')]")))
+            driver.execute_script("arguments[0].click();", option)
+        except Exception as e:
+            raise Exception("فیلد فرستنده وجود دارد اما قابل کلیک یا انتخاب نیست!")
+
+
+    run_step(check_and_select_from, "بررسی و انتخاب حساب فرستنده (اختیاری)")
+
+
+    def type_emails_with_comma(input_element, emails_string):
+        emails = [e.strip() for e in emails_string.split(',') if e.strip()]
+        for email in emails:
+            input_element.send_keys(email)
+            time.sleep(0.5)
+            input_element.send_keys(Keys.ENTER)
+            time.sleep(0.2)
+
+
+    def type_receiver_and_enter():
+        receiver_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@id='inputItem']")))
+        driver.execute_script("arguments[0].click();", receiver_input)
+        type_emails_with_comma(receiver_input, TARGET_EMAIL)
+
+
+    run_step(type_receiver_and_enter, f"تایپ گیرنده و زدن اینتر")
+
+
+    def type_cc():
+        if not CC_EMAIL: return "SKIP_LOG"
+        cc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Cc']]")))
+        cc_btn.click()
         time.sleep(0.5)
-        option = wait.until(
-            EC.presence_of_element_located((By.XPATH, "(//mat-option)[1] | //mat-option[contains(., 'TestZade')]")))
-        driver.execute_script("arguments[0].click();", option)
-    except Exception as e:
-        raise Exception("فیلد فرستنده وجود دارد اما قابل کلیک یا انتخاب نیست!")
+
+        all_inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@id='inputItem']")))
+        cc_input = all_inputs[-1]
+        driver.execute_script("arguments[0].click();", cc_input)
+        type_emails_with_comma(cc_input, CC_EMAIL)
 
 
-run_step(check_and_select_from, "بررسی و انتخاب حساب فرستنده (اختیاری)")
+    run_step(type_cc, "تایپ رونوشت (CC)")
 
 
-def type_receiver_and_enter():
-    # استفاده از ساختار اصلی شما (کلیک جاوااسکریپتی) برای دور زدن لودینگ
-    receiver_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@id='inputItem']")))
-    driver.execute_script("arguments[0].click();", receiver_input)
-    receiver_input.send_keys(TARGET_EMAIL)
-    time.sleep(1)
-    receiver_input.send_keys(Keys.ENTER)
+    def type_bcc():
+        if not BCC_EMAIL: return "SKIP_LOG"
+        bcc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Bcc']]")))
+        bcc_btn.click()
+        time.sleep(0.5)
+
+        all_inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@id='inputItem']")))
+        bcc_input = all_inputs[-1]
+        driver.execute_script("arguments[0].click();", bcc_input)
+        type_emails_with_comma(bcc_input, BCC_EMAIL)
 
 
-run_step(type_receiver_and_enter, f"تایپ گیرنده و زدن اینتر ({TARGET_EMAIL})")
+    run_step(type_bcc, "تایپ رونوشت پنهان (BCC)")
 
 
-def type_subject():
-    webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
-    time.sleep(1)
-    inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[contains(@id, 'mat-input')]")))
-    target_input = inputs[-1]
-    target_input.click()
-    target_input.clear()
-    target_input.send_keys("تست ارسال از اسکریپت با ایمیل پویا")
-
-
-run_step(type_subject, "تایپ موضوع نامه")
-
-
-def type_body():
-    iframes = driver.find_elements(By.XPATH, "//iframe")
-    if len(iframes) > 0:
-        driver.switch_to.frame(iframes[-1])
-        body = wait.until(EC.element_to_be_clickable((By.XPATH, "//body")))
-        body.click()
-        body.send_keys("این یک متن تستی است که به صورت خودکار ارسال شده است.")
-        driver.switch_to.default_content()
-    else:
-        body = wait.until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='tinymce'] | //div[contains(@class, 'mce-content-body')]")))
-        body.click()
-        body.send_keys("این یک متن تستی است که به صورت خودکار ارسال شده است.")
-
-
-run_step(type_body, "تایپ بدنه ایمیل")
-
-
-def click_send_button():
-    send_btn = wait.until(EC.element_to_be_clickable((
-        By.XPATH,
-        "//app-new-compose//button[contains(., 'ارسال')] | //app-modal-container//button[.//span[contains(text(), 'ارسال')]]"
-    )))
-    send_btn.click()
-
-
-run_step(click_send_button, "کلیک روی ارسال")
-
-
-def verify_network_200():
-    print("  [⏳] در حال پایش زنده ترافیک شبکه (حداکثر ۱۰ ثانیه)...")
-    max_retries = 10
-    for attempt in range(max_retries):
-        logs = driver.get_log("performance")
-        for entry in logs:
-            try:
-                log_data = json.loads(entry["message"])["message"]
-                if log_data["method"] == "Network.responseReceived":
-                    response = log_data["params"]["response"]
-                    url = response.get("url", "")
-                    status = response.get("status")
-                    if "/api/mail/send" in url.lower():
-                        clean_url = url.split('?')[0]
-                        print(f"  [🌐] ریکوئست هدف پیدا شد! URL: {clean_url} | Status: {status}")
-                        if status == 200:
-                            return
-                        elif status == 204:
-                            continue
-                        else:
-                            raise Exception(f"بک‌اند ارور داد! کد وضعیت سرور: {status}")
-            except Exception:
-                pass
+    def type_subject():
+        webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
         time.sleep(1)
-    raise Exception("زمان انتظار تمام شد! ریکوئست اصلی یافت نشد.")
+        inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[contains(@id, 'mat-input')]")))
+        target_input = inputs[-1]
+        target_input.click()
+        target_input.clear()
+        target_input.send_keys("تست ارسال از اسکریپت با ایمیل پویا")
 
 
-run_step(verify_network_200, "بررسی کد 200 در تب Network")
+    run_step(type_subject, "تایپ موضوع نامه")
 
-print("\n🏁 تست با موفقیت به پایان رسید.")
-driver.quit()
+
+    def type_body():
+        iframes = driver.find_elements(By.XPATH, "//iframe")
+        if len(iframes) > 0:
+            driver.switch_to.frame(iframes[-1])
+            body = wait.until(EC.element_to_be_clickable((By.XPATH, "//body")))
+            body.click()
+            body.send_keys("این یک متن تستی است که به صورت خودکار ارسال شده است.")
+            driver.switch_to.default_content()
+        else:
+            body = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//*[@id='tinymce'] | //div[contains(@class, 'mce-content-body')]")))
+            body.click()
+            body.send_keys("این یک متن تستی است که به صورت خودکار ارسال شده است.")
+
+
+    run_step(type_body, "تایپ بدنه ایمیل")
+
+
+    def click_send_button():
+        send_btn = wait.until(EC.element_to_be_clickable((
+            By.XPATH,
+            "//app-new-compose//button[contains(., 'ارسال')] | //app-modal-container//button[.//span[contains(text(), 'ارسال')]]"
+        )))
+        send_btn.click()
+
+
+    run_step(click_send_button, "کلیک روی ارسال")
+
+
+    def verify_network_200():
+        print("  [⏳] در حال پایش زنده ترافیک شبکه (حداکثر ۱۰ ثانیه)...")
+        max_retries = 10
+        for attempt in range(max_retries):
+            logs = driver.get_log("performance")
+            for entry in logs:
+                try:
+                    log_data = json.loads(entry["message"])["message"]
+                    if log_data["method"] == "Network.responseReceived":
+                        response = log_data["params"]["response"]
+                        url = response.get("url", "")
+                        status = response.get("status")
+                        if "/api/mail/send" in url.lower():
+                            clean_url = url.split('?')[0]
+                            print(f"  [🌐] ریکوئست هدف پیدا شد! URL: {clean_url} | Status: {status}")
+                            if status == 200:
+                                return
+                            elif status == 204:
+                                continue
+                            else:
+                                raise Exception(f"بک‌اند ارور داد! کد وضعیت سرور: {status}")
+                except Exception:
+                    pass
+            time.sleep(1)
+        raise Exception("زمان انتظار تمام شد! ریکوئست اصلی یافت نشد.")
+
+
+    run_step(verify_network_200, "بررسی کد 200 در تب Network")
+
+    print("\n🏁 تست با موفقیت به پایان رسید.")
+
+finally:
+    # 🌟 مرورگر تحت هر شرایطی (موفقیت یا ارور خوردن تست) بسته می‌شود
+    driver.quit()
