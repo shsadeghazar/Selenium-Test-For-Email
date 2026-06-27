@@ -15,6 +15,9 @@ try:
         config = json.load(f)
         TARGET_URL = config["url"].strip()
         TARGET_EMAIL = config.get("target_email", "shayan2@chbeta.ir").strip()
+        # 🌟 دریافت CC و BCC از کانفیگ
+        CC_EMAIL = config.get("cc_email", "").strip()
+        BCC_EMAIL = config.get("bcc_email", "").strip()
 
         if not TARGET_URL.endswith('/'):
             TARGET_URL += '/'
@@ -105,16 +108,43 @@ def check_and_select_from():
 run_step(check_and_select_from, "بررسی و انتخاب حساب فرستنده (اختیاری)")
 
 
-def type_receiver_and_enter():
-    # استفاده از ساختار اصلی شما (کلیک جاوااسکریپتی) برای دور زدن لودینگ
-    receiver_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@id='inputItem']")))
+# 🌟 تایپ چندگانه گیرنده‌ها (To)
+def type_multiple_emails(target_input_xpath, emails_string):
+    if not emails_string: return
+    # پیدا کردن همه اینپوت‌ها و انتخاب آخرین مورد که باز شده است
+    inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, target_input_xpath)))
+    receiver_input = inputs[-1]
     driver.execute_script("arguments[0].click();", receiver_input)
-    receiver_input.send_keys(TARGET_EMAIL)
-    time.sleep(1)
-    receiver_input.send_keys(Keys.ENTER)
+
+    emails = [e.strip() for e in emails_string.split(',') if e.strip()]
+    for email in emails:
+        receiver_input.send_keys(email)
+        time.sleep(0.5)
+        receiver_input.send_keys(Keys.ENTER)
+        time.sleep(0.2)
 
 
-run_step(type_receiver_and_enter, f"تایپ گیرنده و زدن اینتر ({TARGET_EMAIL})")
+run_step(lambda: type_multiple_emails("//input[@id='inputItem']", TARGET_EMAIL), f"تایپ گیرنده(ها) و زدن اینتر")
+
+
+# 🌟 تایپ CC و BCC
+def type_cc_bcc():
+    # باز کردن فیلد CC
+    if CC_EMAIL:
+        cc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Cc']]")))
+        cc_btn.click()
+        type_multiple_emails("//input[@id='inputItem']", CC_EMAIL)
+
+    # باز کردن فیلد BCC
+    if BCC_EMAIL:
+        bcc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Bcc']]")))
+        bcc_btn.click()
+        type_multiple_emails("//input[@id='inputItem']", BCC_EMAIL)
+
+
+run_step(type_cc_bcc, "تایپ CC و BCC")
 
 
 def type_subject():
@@ -172,8 +202,6 @@ def verify_network_200():
                     url = response.get("url", "")
                     status = response.get("status")
                     if "/api/mail/send" in url.lower():
-                        clean_url = url.split('?')[0]
-                        print(f"  [🌐] ریکوئست هدف پیدا شد! URL: {clean_url} | Status: {status}")
                         if status == 200:
                             return
                         elif status == 204:
@@ -189,4 +217,4 @@ def verify_network_200():
 run_step(verify_network_200, "بررسی کد 200 در تب Network")
 
 print("\n🏁 تست با موفقیت به پایان رسید.")
-driver.quit()
+driver.quit()  # 🌟 بستن اتوماتیک مرورگر
