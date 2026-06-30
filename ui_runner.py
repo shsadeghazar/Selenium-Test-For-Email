@@ -16,7 +16,9 @@ TEST_SCRIPTS = {
     "ریپلای ساده به اولین ایمیل": "test_reply_email.py",
     "ریپلای پیشرفته (با پیوست و CC/BCC)": "test_reply_with_attachment.py",
     "ریپلای پیشرفته با امضا": "test_reply_with_signature.py",         # سناریوی جدید ۲
-    "ساخت پوشه و پوشه تکراری": "test_create_folder.py"
+    "ساخت پوشه و پوشه تکراری": "test_create_folder.py",
+    "تغییر وضعیت خوانده شده/نخوانده": "test_mark_read_unread.py",
+    "انتقال به هرزنامه": "test_move_to_spam.py"
 }
 
 # ساخت پوشه برای ذخیره لاگ‌های مجزا
