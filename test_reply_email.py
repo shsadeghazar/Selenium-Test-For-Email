@@ -82,7 +82,29 @@ print("\n▶️ شروع تست: باز کردن اولین ایمیل و ارس
 
 # ۱. ورود به اینباکس با استفاده از آدرس پویا
 run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
-time.sleep(5)  # مکث برای لود شدن لیست ایمیل‌ها
+time.sleep(5)  # مکث برای لود شدن اولیه صفحه
+
+
+# ۱.۴ کلیک روی آیکون ماژول نامه
+def click_mail_icon():
+    mail_icon = wait.until(EC.presence_of_element_located((
+        By.XPATH, "//a[@id='mailApplicationButton'] | //a[contains(@href, '/nui/mail')]"
+    )))
+    driver.execute_script("arguments[0].click();", mail_icon)
+    time.sleep(3)
+
+run_step(click_mail_icon, "کلیک روی آیکون ماژول نامه")
+
+
+# ۱.۵ کلیک روی منوی صندوق دریافت در سایدبار
+def click_inbox_folder():
+    inbox_element = wait.until(EC.presence_of_element_located((
+        By.XPATH, "//span[contains(@class, 'tree-item__name') and contains(text(), 'صندوق دریافت')] | //span[contains(text(), 'صندوق دریافت')]"
+    )))
+    driver.execute_script("arguments[0].click();", inbox_element)
+    time.sleep(2)
+
+run_step(click_inbox_folder, "کلیک روی منوی صندوق دریافت")
 
 
 # ۲. پیدا کردن و کلیک روی اولین ایمیل واقعی در لیست
