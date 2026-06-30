@@ -83,7 +83,7 @@ except Exception as e:
 # بخش ۳: سناریوی باز کردن اولین ایمیل و ریپلای پیشرفته
 # ==============================================================
 try:
-    print("\n▶️ شروع تست: باز کردن اولین ایمیل و ارسال پاسخ پیشرفته (پیوست + گیرنده‌ها)")
+    print("\n▶️ شروع تست: باز کردن اولین ایمیل و ارسال پاسخ پیشرفته (پیوست + گیرنده‌ها + امضا)")
 
     run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
     time.sleep(5)
@@ -263,6 +263,43 @@ try:
 
     run_step(type_reply_body, "تایپ متن پاسخ در بدنه ایمیل")
 
+
+    # ==========================================================
+    # بخش جدید: مدیریت امضا (استفاده از کیبورد در صورت بلاک شدن کلیک)
+    # ==========================================================
+    def open_signature_menu():
+        signature_btn = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//span[contains(text(),'امضاها')] | //span[normalize-space()='امضاها']")
+        ))
+        driver.execute_script("arguments[0].click();", signature_btn)
+
+
+    run_step(open_signature_menu, "کلیک روی دکمه 'امضاها'")
+
+
+    def choose_signature():
+        time.sleep(1.5)
+
+        try:
+            menu_button = wait.until(EC.element_to_be_clickable(
+                (By.XPATH,
+                 "//*[contains(@class, 'mat-mdc-menu-item-text')]/ancestor::button | //button[@role='menuitem']")
+            ))
+            menu_button.click()
+        except Exception:
+            webdriver.ActionChains(driver) \
+                .send_keys(Keys.ARROW_DOWN) \
+                .pause(0.5) \
+                .send_keys(Keys.ENTER) \
+                .perform()
+
+        time.sleep(2)
+
+
+    run_step(choose_signature, "انتخاب اولین امضا از منوی باز شده")
+
+
+    # ==========================================================
 
     def click_send_button():
         send_btn = wait.until(EC.presence_of_element_located((

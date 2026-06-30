@@ -6,12 +6,16 @@ import threading
 import os
 import jdatetime  # 🌟 اضافه شدن کتابخانه تاریخ شمسی
 
-# لیست اسکریپت‌های تست شما
+# لیست اسکریپت‌های تست شما (🌟 دو تست جدید دارای امضا به این لیست اضافه شدند)
 TEST_SCRIPTS = {
     "لاگین و ذخیره سشن": "login_and_save.py",
     "ارسال ایمیل ساده": "test_send_email.py",
     "ارسال ایمیل با پیوست": "test_send_with_attachment.py",
-    "ریپلای به اولین ایمیل": "test_reply_email.py",
+    "ارسال ایمیل با پیوست و امضا": "test_send_mail_with_signature.py", # سناریوی جدید ۱
+    "ذخیره پیش‌نویس همراه با پیوست": "test_save_draft_with_attachment.py",
+    "ریپلای ساده به اولین ایمیل": "test_reply_email.py",
+    "ریپلای پیشرفته (با پیوست و CC/BCC)": "test_reply_with_attachment.py",
+    "ریپلای پیشرفته با امضا": "test_reply_with_signature.py",         # سناریوی جدید ۲
     "ساخت پوشه و پوشه تکراری": "test_create_folder.py"
 }
 

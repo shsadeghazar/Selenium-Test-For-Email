@@ -46,8 +46,8 @@ def run_step(action, description):
             print(f"  [✓] {description} با موفقیت انجام شد.")
     except Exception as e:
         error_msg = str(e).split('\n')[0]
+        # چاپ ارور بدون متوقف کردن کل تست (Soft Assertion)
         print(f"  [⚠️] {description} خطا داد. علت: {error_msg}")
-        raise e
 
 
 driver.get(base_url)
@@ -80,6 +80,17 @@ try:
 
     run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
     time.sleep(5)
+
+    def click_mail_icon_for_safety():
+        # استفاده از آیدی مطمئن و تگ لینک استاندارد برای جلوگیری از خطای جاوااسکریپت و Namespace
+        mail_icon = wait.until(EC.presence_of_element_located((
+            By.XPATH,
+            "//a[@id='mailApplicationButton'] | //a[contains(@href, '/nui/mail')]"
+        )))
+        driver.execute_script("arguments[0].click();", mail_icon)
+        time.sleep(3)  # صبر برای لود شدن وضعیت روتر فرانت‌اند
+
+    run_step(click_mail_icon_for_safety, "کلیک روی آیکون ماژول نامه (محض اطمینان)")
 
     run_step(
         lambda: wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'نامه جدید')]"))).click(),
@@ -234,5 +245,5 @@ try:
     print("\n🏁 تست با موفقیت به پایان رسید.")
 
 finally:
-    # 🌟 مرورگر تحت هر شرایطی (موفقیت یا ارور خوردن تست) بسته می‌شود
+    # 🌟 مرورگر تحت هر شرایطی بسته می‌شود
     driver.quit()

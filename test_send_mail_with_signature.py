@@ -42,7 +42,6 @@ def run_step(action, description):
             print(f"  [✓] {description} با موفقیت انجام شد.")
     except Exception as e:
         error_msg = str(e).split('\n')[0]
-        # حذف raise e برای جلوگیری از توقف کامل برنامه و استفاده از Soft Assertion
         print(f"  [⚠️] {description} خطا داد. علت: {error_msg}")
 
 
@@ -92,13 +91,13 @@ def verify_network_request(api_endpoint, timeout=15):
 
 
 try:
-    print(f"\n▶️ شروع تست: ارسال نامه جدید همراه با پیوست به {TARGET_EMAIL}")
+    print(f"\n▶️ شروع تست: ارسال نامه جدید همراه با پیوست و امضا به {TARGET_EMAIL}")
 
     run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
     time.sleep(5)
 
+
     def click_mail_icon_for_safety():
-        # کلیک طلایی روی آیکون ایمیل برای بیدار کردن روتر SPA
         mail_icon = wait.until(EC.presence_of_element_located((
             By.XPATH,
             "//a[@id='mailApplicationButton'] | //a[contains(@href, '/nui/mail')]"
@@ -106,7 +105,9 @@ try:
         driver.execute_script("arguments[0].click();", mail_icon)
         time.sleep(3)
 
+
     run_step(click_mail_icon_for_safety, "کلیک روی آیکون ماژول نامه (محض اطمینان)")
+
 
     def click_new_email():
         try:
@@ -116,6 +117,7 @@ try:
         time.sleep(2)
         new_mail_btn = wait.until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'نامه جدید')]")))
         driver.execute_script("arguments[0].click();", new_mail_btn)
+
 
     run_step(click_new_email, "کلیک روی نامه جدید و عبور از لودینگ")
     time.sleep(1.5)
@@ -129,7 +131,6 @@ try:
             print("  [ℹ️] فیلد فرستنده (From) وجود نداشت. ادامه عملیات...")
             return "SKIP_LOG"
         try:
-            # 🌟 اصلاح کلیک عادی به کلیک جاوااسکریپتی برای دور زدن لودینگ گیف
             driver.execute_script("arguments[0].click();", visible_dropdown)
             time.sleep(0.5)
             option = wait.until(
@@ -199,7 +200,7 @@ try:
         target_input = inputs[-1]
         target_input.click()
         target_input.clear()
-        target_input.send_keys("تست ارسال فایل پیوست با اسکریپت پویا")
+        target_input.send_keys("تست ارسال فایل پیوست با اسکریپت پویا و امضا")
 
 
     run_step(type_subject, "تایپ موضوع")
@@ -210,16 +211,60 @@ try:
         if len(iframes) > 0:
             driver.switch_to.frame(iframes[-1])
             body = wait.until(EC.presence_of_element_located((By.XPATH, "//body")))
-            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست است.</p>';", body)
+            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست و امضا است.</p>';", body)
             driver.switch_to.default_content()
         else:
             body = wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[@id='tinymce'] | //div[contains(@class, 'mce-content-body')]")))
-            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست است.</p>';", body)
+            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست و امضا است.</p>';", body)
 
 
     run_step(type_body, "تایپ بدنه")
 
+
+    # ==========================================================
+    # بخش جدید: مدیریت امضا (استفاده از کیبورد در صورت بلاک شدن کلیک)
+    # ==========================================================
+
+    # استپ اول: باز کردن منوی امضا
+    def open_signature_menu():
+        signature_btn = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//span[contains(text(),'امضاها')] | //span[normalize-space()='امضاها']")
+        ))
+        driver.execute_script("arguments[0].click();", signature_btn)
+
+
+    run_step(open_signature_menu, "کلیک روی دکمه 'امضاها'")
+
+
+    # استپ دوم: انتخاب امضا از لیست با راهکار ضدضربه
+    def choose_signature():
+        # مکث حیاتی برای تکمیل انیمیشن باز شدن منو
+        time.sleep(1.5)
+
+        try:
+            # روش ۱: پیدا کردن دکمه اصلی (پدر) به جای کلیک روی خود متن
+            menu_button = wait.until(EC.element_to_be_clickable(
+                (By.XPATH,
+                 "//*[contains(@class, 'mat-mdc-menu-item-text')]/ancestor::button | //button[@role='menuitem']")
+            ))
+            menu_button.click()
+        except Exception:
+            # روش ۲ (راهکار قطعی): استفاده از کیبورد برای انتخاب گزینه در صورت بلاک شدن کلیک با ماوس
+            webdriver.ActionChains(driver) \
+                .send_keys(Keys.ARROW_DOWN) \
+                .pause(0.5) \
+                .send_keys(Keys.ENTER) \
+                .perform()
+
+        # دادن زمان به ادیتور برای اینکه امضا را داخل متن لود کند
+        time.sleep(2)
+
+
+    run_step(choose_signature, "انتخاب اولین امضا از منوی باز شده")
+
+
+    # ==========================================================
 
     def upload_file():
         file_path = os.path.join(os.getcwd(), "dummy_test_attachment.txt")
@@ -247,7 +292,7 @@ try:
     run_step(click_send, "کلیک روی دکمه ارسال")
     run_step(lambda: verify_network_request("/api/mail/send"), "بررسی کد 200 برای ارسال نهایی (send)")
 
-    print("\n🏁 تست ارسال با پیوست با موفقیت و تاییدیه قطعی بک‌اند به پایان رسید.")
+    print("\n🏁 تست ارسال با پیوست و امضا با موفقیت و تاییدیه قطعی بک‌اند به پایان رسید.")
 
 finally:
     driver.quit()

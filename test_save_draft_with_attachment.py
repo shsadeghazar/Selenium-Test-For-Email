@@ -92,10 +92,11 @@ def verify_network_request(api_endpoint, timeout=15):
 
 
 try:
-    print(f"\n▶️ شروع تست: ارسال نامه جدید همراه با پیوست به {TARGET_EMAIL}")
+    print(f"\n▶️ شروع تست: ذخیره نامه جدید در پیش‌نویس همراه با پیوست")
 
     run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
     time.sleep(5)
+
 
     def click_mail_icon_for_safety():
         # کلیک طلایی روی آیکون ایمیل برای بیدار کردن روتر SPA
@@ -106,7 +107,9 @@ try:
         driver.execute_script("arguments[0].click();", mail_icon)
         time.sleep(3)
 
+
     run_step(click_mail_icon_for_safety, "کلیک روی آیکون ماژول نامه (محض اطمینان)")
+
 
     def click_new_email():
         try:
@@ -116,6 +119,7 @@ try:
         time.sleep(2)
         new_mail_btn = wait.until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'نامه جدید')]")))
         driver.execute_script("arguments[0].click();", new_mail_btn)
+
 
     run_step(click_new_email, "کلیک روی نامه جدید و عبور از لودینگ")
     time.sleep(1.5)
@@ -199,7 +203,7 @@ try:
         target_input = inputs[-1]
         target_input.click()
         target_input.clear()
-        target_input.send_keys("تست ارسال فایل پیوست با اسکریپت پویا")
+        target_input.send_keys("تست ذخیره پیش‌نویس فایل پیوست با اسکریپت پویا")
 
 
     run_step(type_subject, "تایپ موضوع")
@@ -238,16 +242,22 @@ try:
     run_step(lambda: verify_network_request("file"), "بررسی کد 200 برای آپلود پیوست (file)")
 
 
-    def click_send():
-        send_btn = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//button[normalize-space()='ارسال'] | //button[.//span[normalize-space()='ارسال']]")))
-        driver.execute_script("arguments[0].click();", send_btn)
+    # ==============================================================
+    # تغییرات فقط در این قسمت اعمال شد: کلیک روی پیش‌نویس به جای ارسال
+    # ==============================================================
+    def click_save_draft():
+        # خالی کردن بافر لاگ قبلی شبکه قبل از کلیک
+        driver.get_log("performance")
+
+        draft_btn = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//button[@id='saveDraft'] | //button[.//span[normalize-space()='ذخیره در پیش‌نویس']]")))
+        driver.execute_script("arguments[0].click();", draft_btn)
 
 
-    run_step(click_send, "کلیک روی دکمه ارسال")
-    run_step(lambda: verify_network_request("/api/mail/send"), "بررسی کد 200 برای ارسال نهایی (send)")
+    run_step(click_save_draft, "کلیک روی دکمه ذخیره در پیش‌نویس")
+    run_step(lambda: verify_network_request("/api/mail/saveDraft"), "بررسی کد 200 برای ذخیره در پیش‌نویس (saveDraft)")
 
-    print("\n🏁 تست ارسال با پیوست با موفقیت و تاییدیه قطعی بک‌اند به پایان رسید.")
+    print("\n🏁 تست ذخیره در پیش‌نویس با پیوست با موفقیت و تاییدیه قطعی بک‌اند به پایان رسید.")
 
 finally:
     driver.quit()
