@@ -119,7 +119,7 @@ def generate_random_name(prefix="Test"):
 # ==============================================================
 # ۳. سناریوی اصلی: چرخه حیات پوشه (ساخت، تکرار، ویرایش نام، حذف)
 # ==============================================================
-print("\n▶️ شروع تست: چرخه حیات پوشه‌ها")
+print("\n▶️ شروع تست: چرخه حیات پوشه‌ها زیرمجموعه صندوق ارسال")
 
 
 def load_inbox():
@@ -131,7 +131,7 @@ def load_inbox():
     time.sleep(2)
 
 
-run_step(load_inbox, "لود کردن اینباکس و عبور از صفحه لودینگ")
+run_step(load_inbox, "لود کردن صفحه اصلی و عبور از صفحه لودینگ")
 
 
 def attempt_to_create_folder(parent_menu_xpath, folder_name):
@@ -139,7 +139,7 @@ def attempt_to_create_folder(parent_menu_xpath, folder_name):
         menu_btn = wait.until(EC.presence_of_element_located((By.XPATH, parent_menu_xpath)))
         driver.execute_script("arguments[0].click();", menu_btn)
 
-    run_step(open_menu, "باز کردن منوی پوشه والد")
+    run_step(open_menu, "باز کردن منوی پوشه والد (صندوق ارسال)")
     time.sleep(1)
 
     def click_create():
@@ -180,7 +180,6 @@ def attempt_to_create_folder(parent_menu_xpath, folder_name):
     run_step(submit, "کلیک روی دکمه 'ایجاد'")
 
 
-# 🌟 توابع جدید اضافه شده برای تغییر نام و حذف پوشه
 def rename_folder(old_name, new_name):
     def open_folder_menu():
         folder_item = wait.until(EC.presence_of_element_located((
@@ -251,7 +250,8 @@ def delete_folder(folder_name):
 
 
 try:
-    target_menu_xpath = "(//app-sidebar-menu-item//button | //app-mail-sidebar-item//button)[1]"
+    # 🌟 استفاده از متن صریح (ارسال) به جای ایندکس برای جلوگیری از خطای پیدا کردن منوی اشتباه
+    target_menu_xpath = "//span[contains(text(), 'ارسال')]/ancestor::li//button | //span[contains(text(), 'ارسال')]/ancestor::a//button"
 
     test_folder_name = generate_random_name()
 
