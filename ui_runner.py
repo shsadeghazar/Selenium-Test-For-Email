@@ -18,7 +18,9 @@ TEST_SCRIPTS = {
     "ریپلای پیشرفته با امضا": "test_reply_with_signature.py",         # سناریوی جدید ۲
     "ساخت پوشه و پوشه تکراری": "test_create_folder.py",
     "تغییر وضعیت خوانده شده/نخوانده": "test_mark_read_unread.py",
-    "انتقال به هرزنامه": "test_move_to_spam.py"
+    "انتقال به هرزنامه": "test_move_to_spam.py",
+    "ریپلای پیشرفته از صندوق ارسال": "test_reply_with_attachment_from_sent.py",
+    "تغییر وضعیت خوانده شده/نخوانده در صندوق ارسال": "test_mark_read_unread_sent.py"
 }
 
 # ساخت پوشه برای ذخیره لاگ‌های مجزا
