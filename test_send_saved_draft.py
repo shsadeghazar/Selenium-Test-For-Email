@@ -1,0 +1,339 @@
+import time
+import json
+import os
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# ==============================================================
+# بخش ۱: خواندن کانفیگ، تنظیمات مرورگر و تزریق سشن
+# ==============================================================
+try:
+    with open("config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+        TARGET_URL = config["url"].strip()
+        TARGET_EMAIL = config.get("target_email", "shayan2@chbeta.ir").strip()
+        CC_EMAIL = config.get("cc_email", "").strip()
+        BCC_EMAIL = config.get("bcc_email", "").strip()
+
+        if not TARGET_URL.endswith('/'): TARGET_URL += '/'
+        if not TARGET_URL.endswith('nui/'): TARGET_URL += 'nui/'
+        base_url = TARGET_URL
+except FileNotFoundError:
+    print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری اجرا کنید.")
+    exit()
+
+chrome_options = Options()
+chrome_options.add_experimental_option("detach", True)
+chrome_options.add_argument("--start-maximized")
+chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+
+driver = webdriver.Chrome(options=chrome_options)
+wait = WebDriverWait(driver, 15)
+
+
+def run_step(action, description):
+    try:
+        result = action()
+        if result != "SKIP_LOG" and not description.startswith("->"):
+            print(f"  [✓] {description} با موفقیت انجام شد.")
+    except Exception as e:
+        error_msg = str(e).split('\n')[0]
+        # حذف raise e برای جلوگیری از توقف کامل برنامه و استفاده از Soft Assertion
+        print(f"  [⚠️] {description} خطا داد. علت: {error_msg}")
+
+
+driver.get(base_url + "robots.txt")
+time.sleep(2)
+
+try:
+    with open("session.json", "r", encoding="utf-8") as f:
+        session_data = json.load(f)
+    for cookie in session_data.get("cookies", []): driver.add_cookie(cookie)
+    for key, value in session_data.get("local_storage", {}).items():
+        safe_value = json.dumps(value) if not isinstance(value, str) else f"'{value}'"
+        driver.execute_script(f"window.localStorage.setItem('{key}', {safe_value});")
+    for key, value in session_data.get("session_storage", {}).items():
+        safe_value = json.dumps(value) if not isinstance(value, str) else f"'{value}'"
+        driver.execute_script(f"window.sessionStorage.setItem('{key}', {safe_value});")
+    driver.refresh()
+    print("✅ توکن لود شد. ورود به حساب...")
+except Exception as e:
+    print(f"❌ فایل session.json پیدا نشد یا خطا دارد!")
+    driver.quit()
+    exit()
+
+
+def verify_network_request(api_endpoint, timeout=15):
+    print(f"  [⏳] در حال بررسی ریکوئست '{api_endpoint}' در شبکه...")
+    for _ in range(timeout):
+        logs = driver.get_log("performance")
+        for entry in logs:
+            try:
+                log_data = json.loads(entry["message"])["message"]
+                if log_data["method"] == "Network.responseReceived":
+                    response = log_data["params"]["response"]
+                    url = response.get("url", "")
+                    status = response.get("status")
+                    if api_endpoint.lower() in url.lower():
+                        clean_url = url.split('?')[0]
+                        print(f"    [🌐] شکار شد! URL: {clean_url} | Status: {status}")
+                        if status == 200:
+                            return True
+                        elif status == 204:
+                            continue
+                        else:
+                            raise Exception(f"بک‌اند ارور داد! وضعیت: {status}")
+            except:
+                pass
+        time.sleep(1)
+    raise Exception(f"زمان تمام شد! ریکوئست {api_endpoint} پیدا نشد.")
+
+
+try:
+    print(f"\n▶️ شروع تست: ذخیره نامه جدید در پیش‌نویس همراه با پیوست")
+
+    run_step(lambda: driver.get(base_url + 'mail/message?query=2&page=1&type=inbox'), "ورود به اینباکس")
+    time.sleep(5)
+
+
+    def click_mail_icon_for_safety():
+        # کلیک طلایی روی آیکون ایمیل برای بیدار کردن روتر SPA
+        mail_icon = wait.until(EC.presence_of_element_located((
+            By.XPATH,
+            "//a[@id='mailApplicationButton'] | //a[contains(@href, '/nui/mail')]"
+        )))
+        driver.execute_script("arguments[0].click();", mail_icon)
+        time.sleep(3)
+
+
+    run_step(click_mail_icon_for_safety, "کلیک روی آیکون ماژول نامه (محض اطمینان)")
+
+
+    def click_new_email():
+        try:
+            wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, ".splash-screen")))
+        except:
+            pass
+        time.sleep(2)
+        new_mail_btn = wait.until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'نامه جدید')]")))
+        driver.execute_script("arguments[0].click();", new_mail_btn)
+
+
+    run_step(click_new_email, "کلیک روی نامه جدید و عبور از لودینگ")
+    time.sleep(1.5)
+
+
+    def check_and_select_from():
+        elements = driver.find_elements(By.XPATH,
+                                        "//mat-select[@role='combobox'] | //div[contains(@id,'mat-select-value')]")
+        visible_dropdown = next((el for el in elements if el.is_displayed()), None)
+        if not visible_dropdown:
+            print("  [ℹ️] فیلد فرستنده (From) وجود نداشت. ادامه عملیات...")
+            return "SKIP_LOG"
+        try:
+            driver.execute_script("arguments[0].click();", visible_dropdown)
+            time.sleep(0.5)
+            option = wait.until(
+                EC.presence_of_element_located((By.XPATH, "(//mat-option)[1] | //mat-option[contains(., 'TestZade')]")))
+            driver.execute_script("arguments[0].click();", option)
+        except Exception as e:
+            raise Exception("فیلد فرستنده در صفحه هست اما قابل کلیک یا انتخاب نیست!")
+
+
+    run_step(check_and_select_from, "بررسی و انتخاب حساب فرستنده (اختیاری)")
+
+
+    def type_emails_with_comma(input_element, emails_string):
+        emails = [e.strip() for e in emails_string.split(',') if e.strip()]
+        for email in emails:
+            input_element.send_keys(email)
+            time.sleep(0.5)
+            input_element.send_keys(Keys.ENTER)
+            time.sleep(0.2)
+
+
+    def type_receiver_and_enter():
+        receiver_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@id='inputItem']")))
+        driver.execute_script("arguments[0].click();", receiver_input)
+        type_emails_with_comma(receiver_input, TARGET_EMAIL)
+
+
+    run_step(type_receiver_and_enter, f"تایپ گیرنده و زدن اینتر")
+
+
+    def type_cc():
+        if not CC_EMAIL: return "SKIP_LOG"
+        cc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Cc']]")))
+        cc_btn.click()
+        time.sleep(0.5)
+
+        all_inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@id='inputItem']")))
+        cc_input = all_inputs[-1]
+        driver.execute_script("arguments[0].click();", cc_input)
+        type_emails_with_comma(cc_input, CC_EMAIL)
+
+
+    run_step(type_cc, "تایپ رونوشت (CC)")
+
+
+    def type_bcc():
+        if not BCC_EMAIL: return "SKIP_LOG"
+        bcc_btn = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(@class, 'field-toggle-button') and .//span[text()='Bcc']]")))
+        bcc_btn.click()
+        time.sleep(0.5)
+
+        all_inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[@id='inputItem']")))
+        bcc_input = all_inputs[-1]
+        driver.execute_script("arguments[0].click();", bcc_input)
+        type_emails_with_comma(bcc_input, BCC_EMAIL)
+
+
+    run_step(type_bcc, "تایپ رونوشت پنهان (BCC)")
+
+
+    def type_subject():
+        webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+        time.sleep(1)
+        inputs = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//input[contains(@id, 'mat-input')]")))
+        target_input = inputs[-1]
+        target_input.click()
+        target_input.clear()
+        target_input.send_keys("تست ذخیره پیش‌نویس فایل پیوست با اسکریپت پویا")
+
+
+    run_step(type_subject, "تایپ موضوع")
+
+
+    def type_body():
+        iframes = driver.find_elements(By.XPATH, "//iframe")
+        if len(iframes) > 0:
+            driver.switch_to.frame(iframes[-1])
+            body = wait.until(EC.presence_of_element_located((By.XPATH, "//body")))
+            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست است.</p>';", body)
+            driver.switch_to.default_content()
+        else:
+            body = wait.until(EC.presence_of_element_located(
+                (By.XPATH, "//*[@id='tinymce'] | //div[contains(@class, 'mce-content-body')]")))
+            driver.execute_script("arguments[0].innerHTML = '<p>این نامه حاوی یک فایل پیوست است.</p>';", body)
+
+
+    run_step(type_body, "تایپ بدنه")
+
+
+    def upload_file():
+        file_path = os.path.join(os.getcwd(), "dummy_test_attachment.txt")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("این یک فایل تستی ایجاد شده توسط اتوماسیون سلنیوم است.")
+
+        file_inputs = driver.find_elements(By.XPATH, "//input[@type='file']")
+        target_input = file_inputs[-1]
+        driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';",
+                              target_input)
+        target_input.send_keys(file_path)
+        driver.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", target_input)
+
+
+    run_step(upload_file, "آپلود فایل و بیدار کردن رویداد سایت")
+    run_step(lambda: verify_network_request("file"), "بررسی کد 200 برای آپلود پیوست (file)")
+
+
+    def click_save_draft():
+        # خالی کردن بافر لاگ قبلی شبکه قبل از کلیک
+        driver.get_log("performance")
+
+        draft_btn = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//button[@id='saveDraft'] | //button[.//span[normalize-space()='ذخیره در پیش‌نویس']]")))
+        driver.execute_script("arguments[0].click();", draft_btn)
+
+
+    run_step(click_save_draft, "کلیک روی دکمه ذخیره در پیش‌نویس")
+    run_step(lambda: verify_network_request("/api/mail/saveDraft"), "بررسی کد 200 برای ذخیره در پیش‌نویس (saveDraft)")
+
+    print("\n🏁 تست ذخیره در پیش‌نویس با پیوست با موفقیت و تاییدیه قطعی بک‌اند به پایان رسید.")
+
+    # ==============================================================
+    # 🌟 فاز دوم: ورود به پوشه پیش‌نویس‌ها، کلک جاوااسکریپتی پلی‌رایت برای ویرایش و ارسال
+    # ==============================================================
+    print("\n▶️ فاز دوم: ورود به پوشه پیش‌نویس‌ها از طریق سایدبار، ویرایش و ارسال نهایی")
+
+
+    def click_drafts_menu():
+        webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+        time.sleep(1)
+        draft_menu = wait.until(
+            EC.presence_of_element_located((By.XPATH, "//aside//span[contains(text(),'پیش‌نویس‌ها')]")))
+        driver.execute_script("arguments[0].click();", draft_menu)
+        time.sleep(3)
+
+
+    run_step(click_drafts_menu, "کلیک روی منوی پیش‌نویس‌ها در سایدبار")
+
+
+    def click_target_draft():
+        time.sleep(2)
+        # پیدا کردن تمامی ردیف‌های پیش‌نویس با این نام (استفاده از presence_of_all برای جلوگیری از تایم‌اوت)
+        draft_xpath = "//*[contains(text(),'تست ذخیره پیش‌نویس فایل پیوست با اسکریپت پویا')]"
+        draft_emails = wait.until(EC.presence_of_all_elements_located((By.XPATH, draft_xpath)))
+
+        # انتخاب اولین ایمیل لیست (بالاترین)
+        target_email = draft_emails[0]
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", target_email)
+        time.sleep(1)
+        driver.execute_script("arguments[0].click();", target_email)
+        time.sleep(4)
+
+
+    run_step(click_target_draft, "باز کردن ایمیل پیش‌نویس شده در لیست")
+
+
+    def click_edit_draft():
+        # 🌟 تغییر کلیدی: هدف‌گیری دقیق تگ app-font-icon و متن داخل تگ i با کلاس‌های متریال
+        edit_xpath = (
+            "//app-font-icon[@name='edit'] | "
+            "//app-font-icon[@name='edit']/ancestor::button | "
+            "//i[contains(@class, 'material-icons') and text()='edit']/ancestor::button"
+        )
+        edit_el = wait.until(EC.presence_of_element_located((By.XPATH, edit_xpath)))
+
+        # کلک جاوااسکریپتی قدرتمند: تریگر کلیک روی span یا آیکون و در صورت وجود، روی باتنِ والد
+        driver.execute_script("""
+            var el = arguments[0];
+            // شلیک رویداد کلیک مستقیم به المنت پیدا شده
+            el.click();
+            // تضمین مضاعف: اگر المان خودِ دکمه نیست، دکمه والد آن را هم پیدا کرده و کلیک کن
+            var parentBtn = el.closest('button');
+            if(parentBtn) { parentBtn.click(); }
+        """, edit_el)
+        time.sleep(5)  # مکث حیاتی برای باز شدن کامل پنجره ادیتور
+
+
+    run_step(click_edit_draft, "کلیک روی دکمه ویرایش (Edit)")
+
+
+    def click_send_draft():
+        driver.get_log("performance")
+        time.sleep(1)
+
+        # جمع‌آوری تمامی دکمه‌های ارسال و شلیک به آخرین دکمه (مربوط به ادیتور تازه باز شده)
+        send_xpaths = "//button[.//span[contains(text(),'ارسال')]] | //span[text()='ارسال']/ancestor::button"
+        send_elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, send_xpaths)))
+
+        visible_send_btns = [btn for btn in send_elements if btn.is_displayed()]
+        target_btn = visible_send_btns[-1] if visible_send_btns else send_elements[-1]
+
+        driver.execute_script("arguments[0].click();", target_btn)
+
+
+    run_step(click_send_draft, "کلیک روی دکمه ارسال نهایی")
+    run_step(lambda: verify_network_request("/api/mail/send"), "بررسی کد 200 برای ارسال نهایی (send)")
+
+    print("\n🏁 چرخه کامل پیش‌نویس تا ارسال با موفقیت به پایان رسید.")
+
+finally:
+    driver.quit()

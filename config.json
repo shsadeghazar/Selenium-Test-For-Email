@@ -1,0 +1,9 @@
+{
+    "url": "https://mail.chbeta.ir",
+    "username": "chtest",
+    "password": "Sa-123456",
+    "target_email": "shayan2@chbeta.ir",
+    "cc_email": "shayan2@chbeta.ir,testi3@chbeta.ir",
+    "bcc_email": "shayan2@chbeta.ir,testi3@chbeta.ir",
+    "run_date": "1405-04-22"
+}
