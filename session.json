@@ -1,0 +1,20 @@
+{
+    "cookies": [
+        {
+            "domain": "mail.chbeta.ir",
+            "expiry": 1784313007,
+            "httpOnly": true,
+            "name": "CHMAIL_AUTH_TOKEN",
+            "path": "/",
+            "sameSite": "Strict",
+            "secure": true,
+            "value": "0_f70df0ee4d48bb58172cb002919107f2550b98615e131050541fd6a06c37d5be9551de6c95b38c23c633adc4d99f757900711dfe9c6e5b5ab5801ce6eb588310_69643d33363a61643233313162642d313137632d346265642d393939332d3533626364373736343062353b6578703d31333a313738343132353735313830323b76763d323a31363b747970653d363a63686d61696c3b753d313a613b7469643d393a3530383530393437303b62643d31303a323665383835336263363b637372663d313a313b"
+        }
+    ],
+    "local_storage": {
+        "NG_TRANSLATE_AUTH_LANG_KEY": "fa",
+        "NG_TRANSLATE_LANG_KEY": "fa",
+        "ls.csrfToken": "0_df01b235f1114e3e21590cb51f906b893d9acd77ea35dcf95c16f0021361a2941c2b3b5bec1e3110821f7d5697090023001281b340ae790e2e1523dd75345640",
+        "ls.lastSearchState": "{\"query\":{\"searchRequest\":{\"searchTypes\":\"message\",\"sortBy\":\"nameDesc\"}},\"itemsId\":[\"9742\",\"9740\",\"9704\",\"9703\",\"9701\",\"9679\",\"9672\",\"9669\",\"9666\",\"9663\",\"9648\",\"9644\",\"9643\",\"9639\",\"9638\",\"9634\",\"9633\",\"9630\",\"9629\",\"9628\",\"9627\",\"9626\",\"9625\",\"9624\",\"9623\"],\"hasMore\":true}"
+    }
+}
