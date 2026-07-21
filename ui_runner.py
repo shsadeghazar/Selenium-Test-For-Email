@@ -6,21 +6,25 @@ import threading
 import os
 import jdatetime  # 🌟 اضافه شدن کتابخانه تاریخ شمسی
 
-# لیست اسکریپت‌های تست شما (🌟 دو تست جدید دارای امضا به این لیست اضافه شدند)
+# لیست کامل اسکریپت‌های تست شما
 TEST_SCRIPTS = {
     "لاگین و ذخیره سشن": "login_and_save.py",
     "ارسال ایمیل ساده": "test_send_email.py",
     "ارسال ایمیل با پیوست": "test_send_with_attachment.py",
     "ارسال ایمیل با پیوست و امضا": "test_send_mail_with_signature.py", # سناریوی جدید ۱
     "ذخیره پیش‌نویس همراه با پیوست": "test_save_draft_with_attachment.py",
+    "ارسال پیش‌نویس ذخیره‌شده": "test_send_saved_draft.py",
     "ریپلای ساده به اولین ایمیل": "test_reply_email.py",
     "ریپلای پیشرفته (با پیوست و CC/BCC)": "test_reply_with_attachment.py",
     "ریپلای پیشرفته با امضا": "test_reply_with_signature.py",         # سناریوی جدید ۲
     "ساخت پوشه و پوشه تکراری": "test_create_folder.py",
     "تغییر وضعیت خوانده شده/نخوانده": "test_mark_read_unread.py",
     "انتقال به هرزنامه": "test_move_to_spam.py",
+    "خارج کردن از هرزنامه": "test_remove_from_spam.py",
     "ریپلای پیشرفته از صندوق ارسال": "test_reply_with_attachment_from_sent.py",
-    "تغییر وضعیت خوانده شده/نخوانده در صندوق ارسال": "test_mark_read_unread_sent.py"
+    "تغییر وضعیت خوانده شده/نخوانده در صندوق ارسال": "test_mark_read_unread_sent.py",
+    "چرخه حیات برچسب (ساخت، ویرایش و حذف)": "test_tag_lifecycle.py",
+    "انتشار برچسب روی صندوق‌های مختلف": "test_tag_propagation.py"
 }
 
 # ساخت پوشه برای ذخیره لاگ‌های مجزا
@@ -260,6 +264,19 @@ canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
 canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
+
+# 🌟 فعال‌سازی اسکرول با غلتک موس (Mouse Wheel)
+def _on_mousewheel(event):
+    if event.delta:
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    elif event.num == 4:
+        canvas.yview_scroll(-1, "units")
+    elif event.num == 5:
+        canvas.yview_scroll(1, "units")
+
+canvas.bind_all("<MouseWheel>", _on_mousewheel)
+canvas.bind_all("<Button-4>", _on_mousewheel)
+canvas.bind_all("<Button-5>", _on_mousewheel)
 
 test_vars = {}
 status_labels = {}

@@ -1,0 +1,263 @@
+=================== گزارش عیب‌یابی CSRF TOKEN ===================
+
+--- [1] کوکی‌های مرورگر (Cookies) ---
+Name: CHMAIL_AUTH_TOKEN | Value: 0_24575b9026c3d839ba4477af32ab7b516a0eed921700696716a2aeb1191734188d235a599848cecada0b3ec83901b793792bc291cade42e6932812ce20e3ab8b_69643d33363a61643233313162642d313137632d346265642d393939332d3533626364373736343062353b6578703d31333a313738343739353738353139333b76763d323a31363b747970653d363a63686d61696c3b753d313a613b7469643d393a3832393238313032343b62643d31303a376164373930363531303b637372663d313a313b | Domain: mail.chbeta.ir
+
+--- [2] حافظه محلی (LocalStorage) ---
+Key: NG_TRANSLATE_AUTH_LANG_KEY -> Value: fa
+Key: NG_TRANSLATE_LANG_KEY -> Value: fa
+Key: clear -> Value: {}
+Key: getItem -> Value: {}
+Key: key -> Value: {}
+Key: length -> Value: 5
+Key: ls.lastSearchState -> Value: {"query":{"searchRequest":{"searchTypes":"message","sortBy":"nameDesc"}},"itemsId":["9885","9742","9740","9704","9703","9701","9683","9679","9672","9669","9666","9663","9649","9648","9644","9643","9639","9638","9634","9633","9630","9629","9628","9627","9626"],"hasMore":true}
+Key: removeItem -> Value: {}
+Key: setItem -> Value: {}
+Key: tinymce-custom-colors-forecolor -> Value: []
+Key: tinymce-custom-colors-hilitecolor -> Value: []
+
+--- [3] حافظه موقت (SessionStorage) ---
+Key: clear -> Value: {}
+Key: getItem -> Value: {}
+Key: key -> Value: {}
+Key: length -> Value: 1
+Key: ls.csrfToken -> Value: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+Key: removeItem -> Value: {}
+Key: setItem -> Value: {}
+
+--- [4] تگ‌های متای HTML ---
+تگ متای مرتبط با CSRF یافت نشد.
+
+--- [5] هدرهای درخواست‌های شبکه (Network Request Headers) ---
+
+[URL]: GET https://mail.chbeta.ir/
+  [Request Headers]:
+       Upgrade-Insecure-Requests: 1
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/nui/
+  [Request Headers]:
+       Upgrade-Insecure-Requests: 1
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/api/accounts
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/api/app/i18n
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/api/auth/login
+  [Request Headers]:
+       Accept: */*,*/*
+       Accept-Language: fa,fa
+       Cache-Control: no-cache, no-store,no-cache, no-store
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/auth/login
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap
+  [Request Headers]:
+       Referer: https://mail.chbeta.ir/
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: POST https://mail.chbeta.ir/api/auth/login
+  [Request Headers]:
+       Accept: */*,*/*
+       Accept-Language: fa,fa
+       Cache-Control: no-cache, no-store,no-cache, no-store
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/auth/login
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+    ⭐ X-Flow-Token: 4affc415-2161-4b85-b269-31ec4597d723
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/api/accounts
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/auth/login
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/accounts
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/tags
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/mail/sidebar
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/identity
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/rebrand/images/email-loading.gif
+  [Request Headers]:
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: GET https://mail.chbeta.ir/api/avatar/chtest@chbeta.ir?ver=1784622966953
+  [Request Headers]:
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+
+[URL]: POST https://mail.chbeta.ir/api/mail/search
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: POST https://mail.chbeta.ir/api/mail/search
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/accounts
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/identity
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/mail/subjects
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/settings/get-metadata
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: GET https://mail.chbeta.ir/api/contacts/gal?query=sh&limit=20
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6
+
+[URL]: POST https://mail.chbeta.ir/api/mail/send
+  [Request Headers]:
+       Accept: application/json, text/plain, */*
+       Accept-Language: fa,fa
+       Content-Type: application/json
+       Referer: https://mail.chbeta.ir/nui/mail/message?query=2&page=1&type=inbox
+       User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+       sec-ch-ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"
+       sec-ch-ua-mobile: ?0
+       sec-ch-ua-platform: "Windows"
+    ⭐ x-chmail-csrf-token: 0_21eae3bece6360c573b50f94aeed6be180a7bb407af7e4fdfc17c68f6248827a5c4ff0ab59bf24ec8c9e94e07475901035e84ada009d5ce2e50066528a4038c6

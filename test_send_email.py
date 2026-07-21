@@ -50,7 +50,9 @@ def run_step(action, description):
         print(f"  [⚠️] {description} خطا داد. علت: {error_msg}")
 
 
-driver.get(base_url)
+# باز کردن یک آدرس خنثی روی همان دامنه جهت فراهم ساختن امکان تزریق سشن
+driver.get(base_url + "robots.txt")
+time.sleep(2)
 
 try:
     with open("session.json", "r", encoding="utf-8") as f:
