@@ -2,8 +2,8 @@
     "url": "https://mail.chbeta.ir/nui/",
     "username": "chtest",
     "password": "Sa-123456",
-    "target_email": "shayan2@chbeta.ir,testi3@cchbeta.ir,chtest2@chbeta.ir",
-    "cc_email": "shayan2@chbeta.ir,testi3@cchbeta.ir,chtest2@chbeta.ir",
-    "bcc_email": "shayan2@chbeta.ir,testi3@cchbeta.ir,chtest2@chbeta.ir",
-    "run_date": "1405-04-30"
+    "target_email": "shayan2@chbeta.ir,testi3@chbeta.ir",
+    "cc_email": "shayan2@chbeta.ir,testi3@chbeta.ir",
+    "bcc_email": "shayan2@chbeta.ir,testi3@chbeta.ir",
+    "run_date": "1405-04-31"
 }
