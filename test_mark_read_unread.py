@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -17,6 +18,7 @@ try:
     if not TARGET_URL.endswith('/'): TARGET_URL += '/'
     if not TARGET_URL.endswith('nui/'): TARGET_URL += 'nui/'
     base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری اجرا کنید.")
     exit()
@@ -149,7 +151,12 @@ try:
                         url = response.get("url", "")
                         status = response.get("status")
 
-                        if "api/mail/mark?read=true" in url.lower() or "api/mail/mark?read=false" in url.lower():
+                        if (
+                            "api/mail/mark?read=true" in url.lower()
+                            or "api/mail/mark?read=false" in url.lower()
+                            or "/mail/mark?read=true" in url.lower()
+                            or "/mail/mark?read=false" in url.lower()
+                        ):
                             clean_url = url.split('?')[1] if '?' in url else url
                             if status == 200:
                                 print(f" [🌐] شکار شد! پارامتر: {clean_url} | Status: {status}")

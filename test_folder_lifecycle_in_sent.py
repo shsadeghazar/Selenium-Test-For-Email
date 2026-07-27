@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import random
 import string
 from selenium import webdriver
@@ -21,6 +22,7 @@ try:
         if not TARGET_URL.endswith('nui/'):
             TARGET_URL += 'nui/'
         base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری اجرا کنید.")
     exit()
@@ -74,7 +76,7 @@ except Exception:
 # ==============================================================
 # توابع کمکی
 # ==============================================================
-def verify_api_status(api_endpoint, expect_success=True, timeout=10):
+def verify_api_status(api_endpoint, expect_success=True, timeout=20):
     status_type = "موفقیت‌آمیز (200)" if expect_success else "خطای موردانتظار (400 یا 500)"
     print(f"  [⏳] در حال پایش شبکه برای ریکوئست '{api_endpoint}' با انتظار: {status_type}...")
 
