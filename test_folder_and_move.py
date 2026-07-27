@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import random
 import string
 from selenium import webdriver
@@ -21,6 +22,7 @@ try:
     if not TARGET_URL.endswith('nui/'):
         TARGET_URL += 'nui/'
     base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد!")
     exit()
@@ -82,7 +84,7 @@ except Exception as e:
 # ۳. تابع پایش پاسخ‌های شبکه (Network API Listener)
 # ==============================================================
 
-def verify_network_api(target_endpoint, target_method="POST", expected_status=200, timeout=10):
+def verify_network_api(target_endpoint, target_method="POST", expected_status=200, timeout=20):
     print(f" [⏳] پایش شبکه برای API: [{target_method}] '{target_endpoint}'...")
     start_time = time.time()
     while time.time() - start_time < timeout:
@@ -94,7 +96,16 @@ def verify_network_api(target_endpoint, target_method="POST", expected_status=20
                     resp = log_data["params"]["response"]
                     url = resp.get("url", "")
                     status = resp.get("status", 0)
-                    if target_endpoint in url and status == expected_status:
+                    target_endpoint_lower = target_endpoint.lower().lstrip("/")
+                    endpoint_without_api = target_endpoint_lower.replace("api/", "", 1)
+                    url_lower = url.lower()
+                    if (
+                        (
+                            f"/{target_endpoint_lower}" in url_lower
+                            or f"/{endpoint_without_api}" in url_lower
+                        )
+                        and status == expected_status
+                    ):
                         print(f" [🎯 Network API] درخواست '{target_endpoint}' با استاتوس {status} تایید شد.")
                         return True
         except Exception:

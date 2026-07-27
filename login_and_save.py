@@ -1,6 +1,7 @@
 import time
 import json
 import os
+from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -76,27 +77,65 @@ try:
         login_btn.click()
     run_step(click_login, "کلیک روی دکمه ورود")
 
-    # انتظار برای ورود کامل به برنامه (بررسی تغییر URL یا رندر شدن صفحه اصلی)
+    # انتظار برای ورود کامل به برنامه.
+    # در ورود قدیمی مسیر نهایی معمولاً /nui/ است؛ در CAS ابتدا به دامنه
+    # accounts منتقل می‌شویم و سپس به دامنه خود سامانه برمی‌گردیم.
     def wait_for_dashboard():
-        time.sleep(3)
-        wait.until(EC.url_contains("/nui/"))
+        target_host = (urlparse(base_url).hostname or "").lower()
+
+        def login_is_complete(current_driver):
+            current_host = (urlparse(current_driver.current_url).hostname or "").lower()
+            if current_host != target_host:
+                return False
+
+            # تا وقتی فیلد رمز قابل مشاهده است، هنوز روی فرم ورود هستیم.
+            visible_passwords = [
+                element for element in current_driver.find_elements(By.XPATH, "//input[@type='password']")
+                if element.is_displayed()
+            ]
+            if visible_passwords:
+                return False
+
+            return current_driver.execute_script("return document.readyState") == "complete"
+
+        WebDriverWait(driver, 60).until(login_is_complete)
         # مکث کوتاهی جهت تثبیت ذخیره توکن‌ها در sessionStorage و Cookie
         time.sleep(2)
     run_step(wait_for_dashboard, "انتظار برای ورود به داشبورد و دریافت کامل توکن‌ها")
 
     # دریافت اطلاعات سشن
-    cookies = driver.get_cookies()
+    # get_cookies در صفحه نهایی فقط کوکی‌های قابل استفاده روی دامنه خود
+    # سامانه را می‌دهد؛ بنابراین کوکی مخصوص accounts وارد session.json
+    # نمی‌شود ولی کوکی مشترک CAS مثل .iran.ir حفظ می‌شود.
+    target_host = (urlparse(base_url).hostname or "").lower()
+    cookies = []
+    for cookie in driver.get_cookies():
+        cookie_domain = str(cookie.get("domain", "")).lstrip(".").lower()
+        if target_host == cookie_domain or target_host.endswith("." + cookie_domain):
+            cookies.append(cookie)
     local_storage = driver.execute_script("return window.localStorage;")
     session_storage = driver.execute_script("return window.sessionStorage;")
 
-    # بررسی وجود توکن جدید CSRF در SessionStorage
-    csrf_token = session_storage.get("ls.csrfToken", None)
+    # در سامانه قدیمی توکن در sessionStorage و در CAS در localStorage است.
+    csrf_token = (
+        session_storage.get("ls.csrfToken", None)
+        or local_storage.get("ls.csrfToken", None)
+    )
     if csrf_token:
         print(f" [ℹ️] توکن CSRF با موفقیت استخراج شد: {csrf_token[:20]}...")
     else:
         print(" [⚠️] هشدار: کلید ls.csrfToken در sessionStorage پیدا نشد، اما کل سشن ذخیره خواهد شد.")
 
     session_data = {
+        "app_base_url": (
+            f"{urlparse(driver.current_url).scheme}://{urlparse(driver.current_url).netloc}"
+            + (
+                "/nui/"
+                if urlparse(driver.current_url).path == "/nui"
+                or urlparse(driver.current_url).path.startswith("/nui/")
+                else "/"
+            )
+        ),
         "cookies": cookies,
         "local_storage": local_storage,
         "session_storage": session_storage

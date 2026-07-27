@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import os
 import random
 import string
@@ -31,6 +32,7 @@ try:
     if not TARGET_URL.endswith('nui/'):
         TARGET_URL += 'nui/'
     base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری اجرا کنید.")
     exit()
@@ -86,6 +88,8 @@ except Exception as e:
 def verify_network_request(api_endpoint, expected_method, timeout=15):
     """پایش شبکه با دیباگ کامل متد، URL، status و payload."""
     print(f"    [⏳] در حال بررسی ریکوئست {expected_method} '{api_endpoint}' در شبکه...")
+    endpoint = api_endpoint.lower()
+    endpoint_without_api = endpoint.replace("/api/", "/", 1).replace("api/", "", 1)
     request_map = {}
     matching_requests = []
     all_requests = []
@@ -112,7 +116,7 @@ def verify_network_request(api_endpoint, expected_method, timeout=15):
                     }
                     if url:
                         all_requests.append(f"[{method}] {url}")
-                    if api_endpoint.lower() in url.lower():
+                    if endpoint in url.lower() or endpoint_without_api in url.lower():
                         matching_requests.append((method, url, post_data))
                         print(f"      [📤] درخواست مرتبط ارسال شد: [{method}] {url}")
                         if post_data:
@@ -126,7 +130,7 @@ def verify_network_request(api_endpoint, expected_method, timeout=15):
                     req_info = request_map.get(req_id, {})
                     http_method = req_info.get("method", "UNKNOWN")
 
-                    if api_endpoint.lower() in url.lower():
+                    if endpoint in url.lower() or endpoint_without_api in url.lower():
                         print(f"      [📥] پاسخ مرتبط: [{http_method}] {url} | Status: {status}")
                         if http_method == expected_method and status in [200, 201, 204]:
                             return True
@@ -235,7 +239,7 @@ try:
     # -------------------------------------------------------------
     # مرحله ۲: پیمایش صندوق‌ها بر اساس کلیک روی سایدبار (UI داکیومنت)
     # -------------------------------------------------------------
-    folders = ["صندوق دریافت", "صندوق ارسال", "هرزنامه", "سطل زباله"]
+    folders = ["صندوق دریافت", "صندوق ارسال", "هرزنامه"]
 
 
     def debug_find(by, selector, step_name):

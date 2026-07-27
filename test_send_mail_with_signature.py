@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -22,6 +23,7 @@ try:
         if not TARGET_URL.endswith('/'): TARGET_URL += '/'
         if not TARGET_URL.endswith('nui/'): TARGET_URL += 'nui/'
         base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری اجرا کنید.")
     exit()
@@ -78,7 +80,9 @@ def verify_network_request(api_endpoint, timeout=15):
                     response = log_data["params"]["response"]
                     url = response.get("url", "")
                     status = response.get("status")
-                    if api_endpoint.lower() in url.lower():
+                    endpoint = api_endpoint.lower()
+                    endpoint_without_api = endpoint.replace("/api/", "/", 1)
+                    if endpoint in url.lower() or endpoint_without_api in url.lower():
                         clean_url = url.split('?')[0]
                         print(f"    [🌐] شکار شد! URL: {clean_url} | Status: {status}")
                         if status == 200:

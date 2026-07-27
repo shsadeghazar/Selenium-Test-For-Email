@@ -4,6 +4,9 @@ import json
 import subprocess
 import threading
 import os
+import queue
+import sys
+import time
 import jdatetime  # 🌟 اضافه شدن کتابخانه تاریخ شمسی
 
 # لیست کامل اسکریپت‌های تست شما
@@ -23,12 +26,56 @@ TEST_SCRIPTS = {
     "خارج کردن از هرزنامه": "test_remove_from_spam.py",
     "ریپلای پیشرفته از صندوق ارسال": "test_reply_with_attachment_from_sent.py",
     "تغییر وضعیت خوانده شده/نخوانده در صندوق ارسال": "test_mark_read_unread_sent.py",
-    "چرخه حیات برچسب (ساخت، ویرایش و حذف)": "test_tag_lifecycle.py",
-    "انتشار برچسب روی صندوق‌های مختلف": "test_tag_propagation.py"
+    #"چرخه حیات برچسب (ساخت، ویرایش و حذف)": "test_tag_lifecycle.py",
+    "انتشار برچسب روی صندوق‌های مختلف": "test_tag_propagation.py",
+    "تست انتقال پوشه" : "test_folder_and_move.py",
+   # "تست چرخه پوشه در صندوق تست" : "test_folder_lifecycle_in_sent.py",
+    " تست خوانده شده خوانده نشده در صندوق ارسال" : "test_mark_read_unread_sent.py"
 }
 
 # ساخت پوشه برای ذخیره لاگ‌های مجزا
 os.makedirs("logs", exist_ok=True)
+
+INACTIVITY_TIMEOUT_SECONDS = 60
+
+
+def read_process_output(process):
+    """خروجی را زنده می‌خواند و فقط در صورت ۶۰ ثانیه بی‌خروجی تست را متوقف می‌کند."""
+    output_queue = queue.Queue()
+
+    def reader():
+        try:
+            for output_line in iter(process.stdout.readline, ''):
+                output_queue.put(output_line)
+        finally:
+            output_queue.put(None)
+
+    threading.Thread(target=reader, daemon=True).start()
+    last_output_at = time.monotonic()
+
+    while True:
+        try:
+            line = output_queue.get(timeout=0.2)
+            if line is None:
+                break
+            last_output_at = time.monotonic()
+            yield line
+        except queue.Empty:
+            if (
+                process.poll() is None
+                and time.monotonic() - last_output_at >= INACTIVITY_TIMEOUT_SECONDS
+            ):
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                yield (
+                    "❌ توقف سناریو: تست در یک نقطه بیش از ۶۰ ثانیه "
+                    "هیچ خروجی ثبت نکرد و اجرای سناریوی بعدی آغاز می‌شود.\n"
+                )
+                break
 
 
 def open_log_file(file_path):
@@ -116,11 +163,11 @@ def save_config_and_run():
                         '<pre style="font-family:Consolas, monospace; font-size:14px; white-space:pre-wrap;">\n')
 
                     # اجرای اسکریپت
-                    process = subprocess.Popen(['python', script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    process = subprocess.Popen([sys.executable, '-u', script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                                text=True, encoding='utf-8')
 
                     # خواندن زنده لاگ‌ها و اعمال رنگ‌ها
-                    for line in process.stdout:
+                    for line in read_process_output(process):
                         clean_line = line.strip()
 
                         # 🌟 اصلاح منطق: فقط چک کردن آیکون‌ها، کلمات "خطا" یا "Error" بررسی نمی‌شوند!

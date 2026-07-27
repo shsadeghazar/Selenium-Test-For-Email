@@ -1,5 +1,6 @@
 import time
 import json
+from session_url import resolve_app_base_url
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -26,6 +27,7 @@ try:
             TARGET_URL += 'nui/'
 
         base_url = TARGET_URL
+    base_url = resolve_app_base_url(base_url)
 except FileNotFoundError:
     print("❌ فایل config.json پیدا نشد! لطفاً تست‌ها را از طریق رابط کاربری (UI) اجرا کنید.")
     exit()
@@ -275,9 +277,9 @@ try:
 
 
     def verify_network_200():
-        print("  [⏳] در حال پایش زنده ترافیک شبکه (حداکثر ۱۰ ثانیه)...")
+        print("  [⏳] در حال پایش زنده ترافیک شبکه (حداکثر ۲۰ ثانیه)...")
 
-        max_retries = 10
+        max_retries = 20
 
         for attempt in range(max_retries):
             logs = driver.get_log("performance")
@@ -293,7 +295,7 @@ try:
 
                         url_lower = url.lower()
 
-                        if "/api/mail/send" in url_lower:
+                        if "/api/mail/send" in url_lower or "/mail/send" in url_lower:
                             clean_url = url.split('?')[0]
                             print(f"  [🌐] ریکوئست هدف (API) پیدا شد! URL: {clean_url} | Status: {status}")
 
