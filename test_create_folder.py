@@ -65,7 +65,7 @@ try:
     for key, value in session_data.get("session_storage", {}).items():
         safe_val = json.dumps(value) if not isinstance(value, str) else f"'{value}'"
         driver.execute_script(f"window.sessionStorage.setItem('{key}', {safe_val});")
-    driver.refresh()
+    driver.get(base_url)
     print("✅ توکن لود شد. ورود به حساب...")
 except Exception:
     print("❌ فایل session.json پیدا نشد! اول لاگین را اجرا کن.")

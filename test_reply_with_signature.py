@@ -316,7 +316,7 @@ try:
     def verify_network_200():
         print("  [⏳] در حال پایش زنده ترافیک شبکه (حداکثر ۲۰ ثانیه)...")
 
-        max_retries = 120
+        max_retries = 20
 
         for attempt in range(max_retries):
             logs = driver.get_log("performance")

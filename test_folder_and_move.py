@@ -73,6 +73,7 @@ try:
         safe_val = json.dumps(value) if not isinstance(value, str) else f"'{value}'"
         driver.execute_script(f"window.sessionStorage.setItem('{key}', {safe_val});")
 
+    driver.get(base_url)
     print("✅ سشن با موفقیت تزریق شد.")
 except Exception as e:
     print(f"❌ خطا در تزریق سشن: {e}")

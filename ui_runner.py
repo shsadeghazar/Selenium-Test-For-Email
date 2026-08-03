@@ -7,6 +7,7 @@ import os
 import queue
 import sys
 import time
+import signal
 import jdatetime  # 🌟 اضافه شدن کتابخانه تاریخ شمسی
 
 # لیست کامل اسکریپت‌های تست شما
@@ -26,17 +27,48 @@ TEST_SCRIPTS = {
     "خارج کردن از هرزنامه": "test_remove_from_spam.py",
     "ریپلای پیشرفته از صندوق ارسال": "test_reply_with_attachment_from_sent.py",
     "تغییر وضعیت خوانده شده/نخوانده در صندوق ارسال": "test_mark_read_unread_sent.py",
-    #"چرخه حیات برچسب (ساخت، ویرایش و حذف)": "test_tag_lifecycle.py",
-    "انتشار برچسب روی صندوق‌های مختلف": "test_tag_propagation.py",
-    "تست انتقال پوشه" : "test_folder_and_move.py",
-   # "تست چرخه پوشه در صندوق تست" : "test_folder_lifecycle_in_sent.py",
-    " تست خوانده شده خوانده نشده در صندوق ارسال" : "test_mark_read_unread_sent.py"
+    "چرخه حیات برچسب (ساخت، ویرایش و حذف)": "test_tag_lifecycle.py",
+    "انتشار برچسب روی صندوق‌های مختلف": "test_tag_propagation.py"
 }
 
 # ساخت پوشه برای ذخیره لاگ‌های مجزا
 os.makedirs("logs", exist_ok=True)
 
 INACTIVITY_TIMEOUT_SECONDS = 60
+stop_event = threading.Event()
+process_lock = threading.Lock()
+current_process = None
+active_processes = set()
+
+
+def terminate_process_tree(process):
+    """توقف پردازش تست و تمام پردازش‌های فرزند آن، از جمله مرورگر."""
+    if process is None or process.poll() is not None:
+        return
+
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
+        else:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+    except Exception:
+        try:
+            process.terminate()
+            process.wait(timeout=3)
+        except Exception:
+            try:
+                process.kill()
+            except Exception:
+                pass
 
 
 def read_process_output(process):
@@ -54,6 +86,11 @@ def read_process_output(process):
     last_output_at = time.monotonic()
 
     while True:
+        if stop_event.is_set():
+            terminate_process_tree(process)
+            yield "⏹️ اجرای تست با درخواست کاربر متوقف شد.\n"
+            break
+
         try:
             line = output_queue.get(timeout=0.2)
             if line is None:
@@ -78,6 +115,28 @@ def read_process_output(process):
                 break
 
 
+def stop_tests():
+    """توقف همه تست‌های فعال و لغو تمام سناریوهای باقی‌مانده."""
+    stop_event.set()
+    stop_btn.config(state=tk.DISABLED)
+    log_text.insert(
+        tk.END,
+        "\n⏹️ درخواست توقف کل تست‌ها ثبت شد؛ همه پردازش‌های فعال در حال بسته‌شدن هستند...\n",
+        "info"
+    )
+    log_text.see(tk.END)
+
+    with process_lock:
+        processes = list(active_processes)
+
+    for process in processes:
+        threading.Thread(
+            target=terminate_process_tree,
+            args=(process,),
+            daemon=True
+        ).start()
+
+
 def open_log_file(file_path):
     """باز کردن فایل لاگ (HTML) در مرورگر سیستم"""
     try:
@@ -87,6 +146,8 @@ def open_log_file(file_path):
 
 
 def save_config_and_run():
+    global current_process
+
     url = url_entry.get().strip()
     user = user_entry.get().strip()
     password = pass_entry.get().strip()
@@ -127,7 +188,9 @@ def save_config_and_run():
         return
 
     # تغییر وضعیت UI هنگام شروع
+    stop_event.clear()
     run_btn.config(state=tk.DISABLED)
+    stop_btn.config(state=tk.NORMAL)
     log_text.insert(tk.END, "🚀 شروع اجرای تست‌ها...\n" + "=" * 50 + "\n", "normal")
     log_text.see(tk.END)
 
@@ -137,7 +200,14 @@ def save_config_and_run():
 
     # ۲. اجرای تست‌ها در Thread جداگانه
     def execute_tests():
+        global current_process
+        processed_tests = set()
+
         for name, script in selected_tests:
+            if stop_event.is_set():
+                break
+
+            process = None
             status_labels[name].config(text="🔄 در حال اجرا...", foreground="blue")
 
             # 🌟 نمایش تاریخ در متن لاگ (ترمینال زنده)
@@ -163,8 +233,23 @@ def save_config_and_run():
                         '<pre style="font-family:Consolas, monospace; font-size:14px; white-space:pre-wrap;">\n')
 
                     # اجرای اسکریپت
-                    process = subprocess.Popen([sys.executable, '-u', script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                               text=True, encoding='utf-8')
+                    popen_kwargs = {}
+                    if os.name == "nt":
+                        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+                    else:
+                        popen_kwargs["start_new_session"] = True
+
+                    process = subprocess.Popen(
+                        [sys.executable, '-u', script],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        encoding='utf-8',
+                        **popen_kwargs
+                    )
+                    with process_lock:
+                        current_process = process
+                        active_processes.add(process)
 
                     # خواندن زنده لاگ‌ها و اعمال رنگ‌ها
                     for line in read_process_output(process):
@@ -193,6 +278,7 @@ def save_config_and_run():
                         log_file.write(html_line)
 
                     process.wait()
+                    was_stopped = stop_event.is_set()
 
                     # محاسبه درصد موفقیت
                     total_steps = success_steps + error_steps
@@ -201,7 +287,9 @@ def save_config_and_run():
                     else:
                         percentage = 100 if process.returncode == 0 else 0
 
-                    if percentage == 100:
+                    if was_stopped:
+                        status_labels[name].config(text="⏹️ متوقف شد", foreground="#f59e0b")
+                    elif percentage == 100:
                         status_labels[name].config(text=f"✅ موفق ({percentage}٪)", foreground="green")
                     elif percentage > 0:
                         status_labels[name].config(text=f"⚠️ ناقص ({percentage}٪)", foreground="#d35400")
@@ -216,30 +304,129 @@ def save_config_and_run():
                 status_labels[name].config(text="❌ خطای سیستمی (۰٪)", foreground="red")
                 with open(log_file_path, "a", encoding="utf-8") as log_file:
                     log_file.write(f'<span style="color:#ff3333;">{error_msg}</span></pre></body></html>')
+            finally:
+                with process_lock:
+                    if process is not None:
+                        active_processes.discard(process)
+                        if current_process is process:
+                            current_process = None
+                processed_tests.add(name)
 
             # روشن کردن دکمه لاگ
             log_buttons[name].config(state=tk.NORMAL, command=lambda p=log_file_path: open_log_file(p))
 
-        log_text.insert(tk.END, "\n" + "=" * 50 + "\n🏁 تمام سناریوهای انتخابی به پایان رسید.\n", "success")
+        if stop_event.is_set():
+            for name, _ in selected_tests:
+                if name not in processed_tests:
+                    status_labels[name].config(text="⏹️ اجرا نشد", foreground="#f59e0b")
+            log_text.insert(
+                tk.END,
+                "\n" + "=" * 50 + "\n⏹️ اجرای تست‌ها توسط کاربر متوقف شد.\n",
+                "info"
+            )
+        else:
+            log_text.insert(
+                tk.END,
+                "\n" + "=" * 50 + "\n🏁 تمام سناریوهای انتخابی به پایان رسید.\n",
+                "success"
+            )
         log_text.see(tk.END)
         run_btn.config(state=tk.NORMAL)
+        stop_btn.config(state=tk.DISABLED)
 
     threading.Thread(target=execute_tests, daemon=True).start()
 
 
 # --- طراحی UI پیشرفته ---
 root = tk.Tk()
-root.title("Selenium Automation Runner - Pro Edition")
-root.geometry("650x850")  # 🌟 ارتفاع بیشتر شد تا فیلدهای CC و BCC جا بشوند
-root.configure(padx=20, pady=15)
+root.title("Mail Automation Runner")
+root.geometry("760x900")
+root.minsize(700, 760)
+root.configure(bg="#08111f", padx=24, pady=18)
+try:
+    root.attributes("-alpha", 0.98)
+except tk.TclError:
+    pass
 
 style = ttk.Style()
 style.theme_use('clam')
-style.configure("TButton", font=("Tahoma", 9, "bold"), padding=5)
-style.configure("TLabelframe.Label", font=("Tahoma", 10, "bold"), foreground="#333333")
+style.configure(".", font=("Tahoma", 9), background="#0f1d30", foreground="#e8f2ff")
+style.configure("TFrame", background="#0f1d30")
+style.configure("TLabel", background="#0f1d30", foreground="#dcecff")
+style.configure(
+    "Glass.TLabelframe",
+    background="#0f1d30",
+    bordercolor="#385574",
+    lightcolor="#385574",
+    darkcolor="#385574",
+    relief="solid",
+    borderwidth=1
+)
+style.configure(
+    "Glass.TLabelframe.Label",
+    font=("Tahoma", 10, "bold"),
+    background="#0f1d30",
+    foreground="#9ed8ff"
+)
+style.configure(
+    "TEntry",
+    fieldbackground="#152942",
+    foreground="#ffffff",
+    insertcolor="#ffffff",
+    bordercolor="#385574",
+    padding=7
+)
+style.configure(
+    "TCombobox",
+    fieldbackground="#152942",
+    background="#152942",
+    foreground="#ffffff",
+    arrowcolor="#7dd3fc",
+    bordercolor="#385574",
+    padding=5
+)
+style.map(
+    "TCombobox",
+    fieldbackground=[("readonly", "#152942")],
+    foreground=[("readonly", "#ffffff")]
+)
+style.configure("TCheckbutton", background="#0f1d30", foreground="#dcecff", padding=4)
+style.map("TCheckbutton", background=[("active", "#162a43")])
+style.configure("TButton", font=("Tahoma", 9, "bold"), padding=7, borderwidth=0)
+style.configure("Accent.TButton", background="#36bffa", foreground="#06131f", padding=11)
+style.map("Accent.TButton", background=[("active", "#7dd3fc"), ("disabled", "#29445b")])
+style.configure("Stop.TButton", background="#ef476f", foreground="#ffffff", padding=11)
+style.map("Stop.TButton", background=[("active", "#ff6b8b"), ("disabled", "#493142")])
+style.configure("Log.TButton", background="#1c3552", foreground="#cbe9ff")
+style.map("Log.TButton", background=[("active", "#284b70")])
+style.configure(
+    "Vertical.TScrollbar",
+    background="#1c3552",
+    troughcolor="#0b1728",
+    arrowcolor="#9ed8ff",
+    bordercolor="#0f1d30"
+)
+
+title_label = tk.Label(
+    root,
+    text="✦  Mail Automation Runner",
+    font=("Tahoma", 18, "bold"),
+    bg="#08111f",
+    fg="#e8f6ff"
+)
+title_label.pack(anchor="w", pady=(0, 2))
+
+subtitle_label = tk.Label(
+    root,
+    text="اجرای یکپارچه و کنترل‌شده سناریوهای تست",
+    font=("Tahoma", 9),
+    bg="#08111f",
+    fg="#7895b2"
+)
+subtitle_label.pack(anchor="w", pady=(0, 10))
 
 # --- بخش ورودی اطلاعات ---
-frame_inputs = ttk.LabelFrame(root, text=" ⚙️ تنظیمات و اطلاعات سامانه ", padding=15)
+frame_inputs = ttk.LabelFrame(root, text=" ⚙️ تنظیمات و اطلاعات سامانه ", padding=15, style="Glass.TLabelframe")
 frame_inputs.pack(fill="x", pady=10)
 
 ttk.Label(frame_inputs, text="لینک سامانه:", font=("Tahoma", 9)).grid(row=0, column=0, sticky="w", pady=5)
@@ -299,10 +486,10 @@ year_cb = ttk.Combobox(date_frame, textvariable=year_var, values=[str(i) for i i
 year_cb.pack(side="right", padx=2)
 
 # --- بخش سناریوهای اسکرول‌دار ---
-frame_tests = ttk.LabelFrame(root, text=" 📋 انتخاب و وضعیت سناریوها ", padding=10)
+frame_tests = ttk.LabelFrame(root, text=" 📋 انتخاب و وضعیت سناریوها ", padding=10, style="Glass.TLabelframe")
 frame_tests.pack(fill="both", expand=True, pady=10)
 
-canvas = tk.Canvas(frame_tests, highlightthickness=0)
+canvas = tk.Canvas(frame_tests, highlightthickness=0, bg="#0f1d30")
 scrollbar = ttk.Scrollbar(frame_tests, orient="vertical", command=canvas.yview)
 scrollable_frame = ttk.Frame(canvas)
 
@@ -340,17 +527,54 @@ for i, (name, script) in enumerate(TEST_SCRIPTS.items()):
     lbl_status.grid(row=i, column=1, sticky="w", pady=5, padx=10)
     status_labels[name] = lbl_status
 
-    btn_log = ttk.Button(scrollable_frame, text="📄 مشاهده لاگ", width=12, state=tk.DISABLED)
+    btn_log = ttk.Button(
+        scrollable_frame,
+        text="📄 مشاهده لاگ",
+        width=12,
+        state=tk.DISABLED,
+        style="Log.TButton"
+    )
     btn_log.grid(row=i, column=2, sticky="e", pady=5, padx=5)
     log_buttons[name] = btn_log
 
-run_btn = ttk.Button(root, text="🚀 شــروع اجــرای تسـت‌هــا", command=save_config_and_run)
-run_btn.pack(pady=10, fill="x", ipady=5)
+action_frame = tk.Frame(root, bg="#08111f")
+action_frame.pack(fill="x", pady=10)
+
+run_btn = ttk.Button(
+    action_frame,
+    text="🚀 شــروع اجــرای تسـت‌هــا",
+    command=save_config_and_run,
+    style="Accent.TButton"
+)
+run_btn.pack(side="right", fill="x", expand=True, padx=(6, 0))
+
+stop_btn = ttk.Button(
+    action_frame,
+    text="⏹ توقف همه تست‌ها",
+    command=stop_tests,
+    state=tk.DISABLED,
+    style="Stop.TButton"
+)
+stop_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
 
 # --- بخش لاگ زنده ---
 ttk.Label(root, text="ترمینال زنده:", font=("Tahoma", 9, "bold")).pack(anchor="w")
 
-log_text = tk.Text(root, height=12, bg="#1e1e1e", font=("Consolas", 10), padx=10, pady=10)
+log_text = tk.Text(
+    root,
+    height=12,
+    bg="#08111f",
+    fg="#e5f3ff",
+    insertbackground="#ffffff",
+    selectbackground="#1d4f73",
+    relief="flat",
+    highlightthickness=1,
+    highlightbackground="#385574",
+    highlightcolor="#36bffa",
+    font=("Consolas", 10),
+    padx=12,
+    pady=12
+)
 log_text.tag_config("success", foreground="#00ff00")
 log_text.tag_config("error", foreground="#ff3333")
 log_text.tag_config("info", foreground="#34dbeb")  # 🌟 اضافه شدن رنگ فیروزه‌ای برای [ℹ️]
